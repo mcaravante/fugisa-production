@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* VAG Rounded Fonts */
+@font-face {
+  font-family: 'VAG Rounded';
+  src: url('/fonts/VAG Rounded Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VAG Rounded';
+  src: url('/fonts/VAG Rounded Light_0.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VAG Rounded';
+  src: url('/fonts/VAG Rounded Bold_0.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VAG Rounded';
+  src: url('/fonts/VAG Rounded Black_0.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Century Gothic Fonts */
+@font-face {
+  font-family: 'Century Gothic';
+  src: url('/fonts/centurygothic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Century Gothic';
+  src: url('/fonts/centurygothic_bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 255, 255, 255;
+  --background: 0 0% 98%;
+  --font-poppins: var(--font-poppins);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  font-family: var(--font-poppins), sans-serif;
+}
+
+/* Títulos con VAG Rounded */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'VAG Rounded', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .font-title {
+    font-family: 'VAG Rounded', sans-serif;
+  }
+
+  .font-subtitle {
+    font-family: 'Century Gothic', sans-serif;
+  }
+
+  .font-body {
+    font-family: var(--font-poppins), sans-serif;
+  }
+
+  .bg-gradient-radial {
+    background-image: radial-gradient(circle at center, var(--tw-gradient-stops));
+  }
+}

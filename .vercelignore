@@ -1,0 +1,9 @@
+# Archivos y carpetas a ignorar en el deployment de Vercel
+node_modules
+.next
+.env.local
+.env*.local
+.DS_Store
+*.log
+.idea
+.vscode
