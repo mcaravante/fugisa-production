@@ -1,5 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
+
+async function getOAuthAccessToken(): Promise<string> {
+  const tenantId = process.env.AZURE_TENANT_ID
+  const clientId = process.env.AZURE_CLIENT_ID
+  const clientSecret = process.env.AZURE_CLIENT_SECRET
+
+  const response = await fetch(
+    `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: clientId!,
+        client_secret: clientSecret!,
+        scope: 'https://graph.microsoft.com/.default',
+      }).toString(),
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Error al obtener token OAuth2: ${response.status} - ${error}`)
+  }
+
+  const data = await response.json()
+  return data.access_token
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,19 +50,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Configuración del transporter SMTP
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true', // true para 465, false para otros puertos
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
-      },
-    })
-
-    // Verificar conexión SMTP
-    await transporter.verify()
+    // Obtener token OAuth2 desde Microsoft Identity Platform
+    const accessToken = await getOAuthAccessToken()
 
     // Mapeo de productos de interés
     const productInterestMap: Record<string, string> = {
@@ -45,12 +61,8 @@ export async function POST(request: NextRequest) {
     }
     const productInterestLabel = productInterest ? productInterestMap[productInterest] || productInterest : ''
 
-    // Configurar el email
+    // Armar el contenido del email
     const mailOptions = {
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to: process.env.CONTACT_EMAIL || 'info@fugisa.com.ar',
-      replyTo: email,
-      subject: `Nuevo mensaje de contacto - ${name}`,
       html: `
         <!DOCTYPE html>
         <html lang="es">
@@ -181,8 +193,31 @@ Fecha: ${new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Bueno
       `,
     }
 
-    // Enviar el email
-    await transporter.sendMail(mailOptions)
+    // Enviar el email via Microsoft Graph API
+    const from = process.env.SMTP_USER!
+    const graphResponse = await fetch(
+      `https://graph.microsoft.com/v1.0/users/${from}/sendMail`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: {
+            subject: `Nuevo mensaje de contacto - ${name}`,
+            body: { contentType: 'HTML', content: mailOptions.html },
+            toRecipients: [{ emailAddress: { address: process.env.CONTACT_EMAIL || 'info@fugisa.com.ar' } }],
+            replyTo: [{ emailAddress: { address: email } }],
+          },
+        }),
+      }
+    )
+
+    if (!graphResponse.ok) {
+      const errorDetail = await graphResponse.text()
+      throw new Error(`Error al enviar email via Graph API: ${graphResponse.status} - ${errorDetail}`)
+    }
 
     return NextResponse.json(
       { message: 'Mensaje enviado correctamente' },
